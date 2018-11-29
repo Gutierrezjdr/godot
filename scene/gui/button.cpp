@@ -34,9 +34,7 @@
 
 Size2 Button::get_minimum_size() const {
 
-	Size2 minsize = get_font("font")->get_string_size(xl_text);
-	if (clip_text)
-		minsize.width = 0;
+	Size2 minsize = label->get_minimum_size();
 
 	Ref<Texture> _icon;
 	if (icon.is_null() && has_icon("icon"))
@@ -48,8 +46,7 @@ Size2 Button::get_minimum_size() const {
 
 		minsize.height = MAX(minsize.height, _icon->get_height());
 		minsize.width += _icon->get_width();
-		if (xl_text != "")
-			minsize.width += get_constant("hseparation");
+
 	}
 
 	return get_stylebox("normal")->get_minimum_size() + minsize;
@@ -60,13 +57,6 @@ void Button::_set_internal_margin(Margin p_margin, float p_value) {
 }
 
 void Button::_notification(int p_what) {
-
-	if (p_what == NOTIFICATION_TRANSLATION_CHANGED) {
-
-		xl_text = tr(text);
-		minimum_size_changed();
-		update();
-	}
 
 	if (p_what == NOTIFICATION_DRAW) {
 
@@ -150,34 +140,7 @@ void Button::_notification(int p_what) {
 			_icon = Control::get_icon("icon");
 		else
 			_icon = icon;
-
-		Point2 icon_ofs = (!_icon.is_null()) ? Point2(_icon->get_width() + get_constant("hseparation"), 0) : Point2();
-		int text_clip = size.width - style->get_minimum_size().width - icon_ofs.width;
-		Point2 text_ofs = (size - style->get_minimum_size() - icon_ofs - font->get_string_size(xl_text) - Point2(_internal_margin[MARGIN_RIGHT] - _internal_margin[MARGIN_LEFT], 0)) / 2.0;
-
-		switch (align) {
-			case ALIGN_LEFT: {
-				text_ofs.x = style->get_margin(MARGIN_LEFT) + icon_ofs.x + _internal_margin[MARGIN_LEFT] + get_constant("hseparation");
-				text_ofs.y += style->get_offset().y;
-			} break;
-			case ALIGN_CENTER: {
-				if (text_ofs.x < 0)
-					text_ofs.x = 0;
-				text_ofs += icon_ofs;
-				text_ofs += style->get_offset();
-			} break;
-			case ALIGN_RIGHT: {
-				if (_internal_margin[MARGIN_RIGHT] > 0) {
-					text_ofs.x = size.x - style->get_margin(MARGIN_RIGHT) - font->get_string_size(xl_text).x - _internal_margin[MARGIN_RIGHT] - get_constant("hseparation");
-				} else {
-					text_ofs.x = size.x - style->get_margin(MARGIN_RIGHT) - font->get_string_size(xl_text).x;
-				}
-				text_ofs.y += style->get_offset().y;
-			} break;
-		}
-
-		text_ofs.y += font->get_ascent();
-		font->draw(ci, text_ofs.floor(), xl_text, color, clip_text ? text_clip : -1);
+		
 		if (!_icon.is_null()) {
 
 			int valign = size.height - style->get_minimum_size().y;
@@ -188,23 +151,23 @@ void Button::_notification(int p_what) {
 			} else {
 				_icon->draw(ci, style->get_offset() + Point2(0, Math::floor((valign - _icon->get_height()) / 2.0)), color_icon);
 			}
+			label->set_margin(MARGIN_LEFT, _icon->get_width() + get_constant("hseparation"));
 		}
 	}
 }
 
 void Button::set_text(const String &p_text) {
 
-	if (text == p_text)
+	if (get_text() == p_text)
 		return;
-	text = p_text;
-	xl_text = tr(p_text);
+	label->set_text(p_text);
 	update();
 	_change_notify("text");
 	minimum_size_changed();
 }
 String Button::get_text() const {
 
-	return text;
+	return label->get_text();
 }
 
 void Button::set_icon(const Ref<Texture> &p_icon) {
@@ -236,25 +199,25 @@ bool Button::is_flat() const {
 
 void Button::set_clip_text(bool p_clip_text) {
 
-	clip_text = p_clip_text;
+	label->set_clip_text(p_clip_text);
 	update();
 	minimum_size_changed();
 }
 
 bool Button::get_clip_text() const {
 
-	return clip_text;
+	return label->is_clipping_text();
 }
 
-void Button::set_text_align(TextAlign p_align) {
+void Button::set_text_align(Label::Align p_align) {
 
-	align = p_align;
+	label->set_align(p_align);
 	update();
 }
 
-Button::TextAlign Button::get_text_align() const {
+Label::Align Button::get_text_align() const {
 
-	return align;
+	return label->get_align();
 }
 
 void Button::_bind_methods() {
@@ -270,11 +233,7 @@ void Button::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_text_align"), &Button::get_text_align);
 	ClassDB::bind_method(D_METHOD("is_flat"), &Button::is_flat);
 
-	BIND_ENUM_CONSTANT(ALIGN_LEFT);
-	BIND_ENUM_CONSTANT(ALIGN_CENTER);
-	BIND_ENUM_CONSTANT(ALIGN_RIGHT);
-
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "text", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT_INTL), "set_text", "get_text");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "text", PROPERTY_HINT_MULTILINE_TEXT, "", PROPERTY_USAGE_DEFAULT_INTL), "set_text", "get_text");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "icon", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), "set_button_icon", "get_button_icon");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flat"), "set_flat", "is_flat");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "clip_text"), "set_clip_text", "get_clip_text");
@@ -284,14 +243,18 @@ void Button::_bind_methods() {
 Button::Button(const String &p_text) {
 
 	flat = false;
-	clip_text = false;
 	set_mouse_filter(MOUSE_FILTER_STOP);
-	set_text(p_text);
-	align = ALIGN_CENTER;
 
 	for (int i = 0; i < 4; i++) {
 		_internal_margin[i] = 0;
 	}
+
+	label = memnew(Label(p_text));
+	label->set_mouse_filter(MOUSE_FILTER_IGNORE);
+	label->set_align(Label::ALIGN_CENTER);
+	label->set_valign(Label::VALIGN_CENTER);
+	add_child(label);
+	label->set_anchors_and_margins_preset(PRESET_WIDE, PRESET_MODE_MINSIZE);
 }
 
 Button::~Button() {

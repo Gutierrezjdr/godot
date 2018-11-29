@@ -87,7 +87,7 @@ void CheckButton::_notification(int p_what) {
 CheckButton::CheckButton() {
 
 	set_toggle_mode(true);
-	set_text_align(ALIGN_LEFT);
+	set_text_align(Label::ALIGN_LEFT);
 
 	_set_internal_margin(MARGIN_RIGHT, get_icon_size().width);
 }

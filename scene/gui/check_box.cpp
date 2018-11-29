@@ -85,6 +85,16 @@ void CheckBox::_notification(int p_what) {
 			on->draw(ci, ofs);
 		else
 			off->draw(ci, ofs);
+		
+		int w = 0;
+		if (has_icon("icon"))
+			w = Control::get_icon("icon")->get_width();
+		else {
+			Ref<Texture> b = Button::get_icon();
+			if (!b.is_null())
+				w = b->get_width();
+		}
+		label->set_margin(MARGIN_LEFT, w + get_constant("hseparation") + get_icon_size().width + ofs.x);
 	}
 }
 
@@ -96,7 +106,7 @@ bool CheckBox::is_radio() {
 CheckBox::CheckBox(const String &p_text) :
 		Button(p_text) {
 	set_toggle_mode(true);
-	set_text_align(ALIGN_LEFT);
+	set_text_align(Label::ALIGN_LEFT);
 	_set_internal_margin(MARGIN_LEFT, get_icon_size().width);
 }
 

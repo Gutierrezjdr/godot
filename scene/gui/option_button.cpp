@@ -333,7 +333,7 @@ void OptionButton::_bind_methods() {
 OptionButton::OptionButton() {
 
 	current = -1;
-	set_text_align(ALIGN_LEFT);
+	set_text_align(Label::ALIGN_LEFT);
 	set_action_mode(ACTION_MODE_BUTTON_PRESS);
 
 	popup = memnew(PopupMenu);

@@ -32,6 +32,7 @@
 #define BUTTON_H
 
 #include "scene/gui/base_button.h"
+#include "scene/gui/label.h"
 /**
 	@author Juan Linietsky <reduzio@gmail.com>
 */
@@ -41,25 +42,20 @@ class Button : public BaseButton {
 	GDCLASS(Button, BaseButton);
 
 public:
-	enum TextAlign {
-		ALIGN_LEFT,
-		ALIGN_CENTER,
-		ALIGN_RIGHT
-	};
 
 private:
 	bool flat;
-	String text;
-	String xl_text;
 	Ref<Texture> icon;
 	bool clip_text;
-	TextAlign align;
+	Label::Align align;
 	float _internal_margin[4];
 
 protected:
 	void _set_internal_margin(Margin p_margin, float p_value);
 	void _notification(int p_what);
 	static void _bind_methods();
+	
+	Label *label;
 
 public:
 	//
@@ -78,13 +74,11 @@ public:
 	void set_clip_text(bool p_clip_text);
 	bool get_clip_text() const;
 
-	void set_text_align(TextAlign p_align);
-	TextAlign get_text_align() const;
+	void set_text_align(Label::Align p_align);
+	Label::Align get_text_align() const;
 
 	Button(const String &p_text = String());
 	~Button();
 };
-
-VARIANT_ENUM_CAST(Button::TextAlign);
 
 #endif
